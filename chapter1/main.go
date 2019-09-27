@@ -33,12 +33,18 @@ func (t *TemplateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 
-	//chattemplate := &templateHandler{filename: "chat.html"}
+	chattemplate := &TemplateHandler{filename: "chat.html"}
 
-	http.Handle("/", NewTemplateHandler("chat.html"))
+	//http.Handle("/", NewTemplateHandler("chat.html"))
 
-	//http.Handle("/", chattemplate)
+	//	http.HandleFunc("/")
+	http.Handle("/", chattemplate)
 
+	r := newRoom()
+	r.sayHello()
+	//fmt.Println(r.sayHello())
+
+	http.Handle("/room", r)
 	// start the web server
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal("ListenAndServe:", err)
