@@ -3,13 +3,8 @@ package trace
 import (
 	"bytes"
 	"fmt"
-	"io"
 	"testing"
 )
-
-func New(w io.Writer) Tracer {
-	return &tracer{out: w}
-}
 
 // TestNew ...
 func TestNew(t *testing.T) {
@@ -30,4 +25,9 @@ func TestNew(t *testing.T) {
 	}
 	fmt.Println("Second Buf is:; ")
 	fmt.Println(buf)
+}
+
+func TestOff(t *testing.T) {
+	var silentTracer Tracer = Off()
+	silentTracer.Trace("something")
 }
