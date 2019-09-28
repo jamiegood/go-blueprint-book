@@ -41,7 +41,7 @@ func main() {
 	http.Handle("/", chattemplate)
 
 	r := newRoom()
-	r.sayHello()
+	go r.run()
 	//fmt.Println(r.sayHello())
 
 	http.Handle("/room", r)
