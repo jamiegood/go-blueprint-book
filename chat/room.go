@@ -23,6 +23,7 @@ type room struct {
 
 	sendmsgtoclients chan []byte
 	clients          map[*client]bool
+	clientsArray     []*client
 
 	tracer trace.Tracer
 }
@@ -59,6 +60,7 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	//r.joinRoom(*client)
 	r.clients[client] = true
+	r.clientsArray = append(r.clientsArray, client)
 
 	go client.readFromRoom()
 
@@ -77,11 +79,21 @@ func (r *room) run() {
 
 			r.tracer.Trace("Message received: ", string(msg))
 			fmt.Println(len(r.clients))
-			for client := range r.clients {
+			// for client := range r.clients {
+			// 	//fmt.Println(clientinded)
+			// 	r.tracer.Trace(" -- sent to client")
+
+			// 	client.fromRoom <- msg
+
+			// 	//fmt.Println(msg)
+			// 	//fmt.Println(client.name)
+			// }
+
+			for client := range r.clientsArray {
 				//fmt.Println(clientinded)
 				r.tracer.Trace(" -- sent to client")
 
-				client.fromRoom <- msg
+				r.clientsArray[client].fromRoom <- msg
 
 				//fmt.Println(msg)
 				//fmt.Println(client.name)
