@@ -1,61 +1,45 @@
 package main
 
 import (
-	"fmt"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
-// client ...
+// client represents a single chatting user.
 type client struct {
-	name     string
-	socket   *websocket.Conn
-	fromRoom chan []byte
-	//	send chan []byte
 
+	// socket is the web socket for this client.
+	socket *websocket.Conn
+
+	// send is a channel on which messages are sent.
+	send chan *message
+
+	// room is the room this client is chatting in.
 	room *room
+
+	// userData holds information about the user
+	userData map[string]interface{}
 }
 
-func (c *client) sendToRoom() {
+func (c *client) read() {
 	defer c.socket.Close()
-
 	for {
-		_, msg, err := c.socket.ReadMessage()
+		var msg *message
+		err := c.socket.ReadJSON(&msg)
 		if err != nil {
 			return
 		}
-		fmt.Println(msg)
-		fmt.Println("SENDING messgae to room quque for clients ")
-		c.room.sendmsgtoclients <- msg
+		msg.When = time.Now()
+		msg.Name = c.userData["name"].(string)
+		c.room.forward <- msg
 	}
-
 }
 
-// func (c *client) readFromRoom() {
-// 	defer c.socket.Close()
-
-// 	fmt.Println("XxxxxXXxxxxxxxxxxxxxxxx     Inside the client::readFromRoom")
-
-// 	for {
-// 		msg := <-c.fromRoom
-// 		//c.socket.WriteMessage(websocket.TextMessage, msg)
-// 		fmt.Println("sent message to the client via the wesocket")
-// 		fmt.Println(string(msg))
-// 		err := c.socket.WriteMessage(websocket.TextMessage, msg)
-// 		if err != nil {
-// 			return
-// 		}
-
-// 	}
-
-// }
-
-func (c *client) readFromRoom() {
+func (c *client) write() {
 	defer c.socket.Close()
-	fmt.Println("inside CLient WRITE")
-	for msg := range c.fromRoom {
-		fmt.Println(string(msg))
-		err := c.socket.WriteMessage(websocket.TextMessage, msg)
+	for msg := range c.send {
+		err := c.socket.WriteJSON(msg)
 		if err != nil {
 			return
 		}

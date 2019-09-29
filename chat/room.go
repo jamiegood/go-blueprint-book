@@ -1,49 +1,77 @@
 package main
 
 import (
-	"fmt"
-	"go-blueprint-book/trace"
 	"log"
 	"net/http"
 
+	"github.com/stretchr/objx"
+
 	"github.com/gorilla/websocket"
+	"github.com/matryer/goblueprints/chapter1/trace"
 )
+
+type room struct {
+
+	// forward is a channel that holds incoming messages
+	// that should be forwarded to the other clients.
+	forward chan *message
+
+	// join is a channel for clients wishing to join the room.
+	join chan *client
+
+	// leave is a channel for clients wishing to leave the room.
+	leave chan *client
+
+	// clients holds all current clients in this room.
+	clients map[*client]bool
+
+	// tracer will receive trace information of activity
+	// in the room.
+	tracer trace.Tracer
+}
+
+// newRoom makes a new room that is ready to
+// go.
+func newRoom() *room {
+	return &room{
+		forward: make(chan *message),
+		join:    make(chan *client),
+		leave:   make(chan *client),
+		clients: make(map[*client]bool),
+		tracer:  trace.Off(),
+	}
+}
+
+func (r *room) run() {
+	for {
+		select {
+		case client := <-r.join:
+			// joining
+			r.clients[client] = true
+			r.tracer.Trace("New client joined")
+		case client := <-r.leave:
+			// leaving
+			delete(r.clients, client)
+			close(client.send)
+			r.tracer.Trace("Client left")
+		case msg := <-r.forward:
+			r.tracer.Trace("Message received: ", string(msg.Message))
+			// forward message to all clients
+			for client := range r.clients {
+				client.send <- msg
+				r.tracer.Trace(" -- sent to client")
+			}
+		}
+	}
+}
 
 const (
 	socketBufferSize  = 1024
 	messageBufferSize = 256
 )
 
-var upgrader = &websocket.Upgrader{ReadBufferSize: socketBufferSize,
-	WriteBufferSize: socketBufferSize}
+var upgrader = &websocket.Upgrader{ReadBufferSize: socketBufferSize, WriteBufferSize: socketBufferSize}
 
-// Room ...
-type room struct {
-	name string
-
-	sendmsgtoclients chan []byte
-	clients          map[*client]bool
-	clientsArray     []*client
-
-	tracer trace.Tracer
-}
-
-// newRoom create
-func newRoom() *room {
-	fmt.Println("in room constructor")
-	//return &room{name: "jamiewashere"}
-	return &room{
-		name:             "jamiewashere",
-		sendmsgtoclients: make(chan []byte),
-		//join:    make(chan *client),
-		//leave:   make(chan *client),
-		clients: make(map[*client]bool),
-		tracer:  trace.Off(),
-	}
-
-}
-
-// ServeHTTP handles the HTTP request.
 func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	socket, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
@@ -51,69 +79,19 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	authCookie, err := req.Cookie("auth")
+	if err != nil {
+		log.Fatal("Failed to get auth cookie:", err)
+		return
+	}
 	client := &client{
-		name:     "My client",
 		socket:   socket,
-		fromRoom: make(chan []byte, messageBufferSize),
+		send:     make(chan *message, messageBufferSize),
 		room:     r,
+		userData: objx.MustFromBase64(authCookie.Value),
 	}
-
-	//r.joinRoom(*client)
-	r.clients[client] = true
-	r.clientsArray = append(r.clientsArray, client)
-
-	go client.readFromRoom()
-
-	client.sendToRoom()
-	// r.join <- client
-	// defer func() { r.leave <- client }()
-	//go client.write()
-	//client.read()
-}
-
-func (r *room) run() {
-
-	for {
-		select {
-		case msg := <-r.sendmsgtoclients:
-
-			r.tracer.Trace("Message received: ", string(msg))
-			fmt.Println(len(r.clients))
-			// for client := range r.clients {
-			// 	//fmt.Println(clientinded)
-			// 	r.tracer.Trace(" -- sent to client")
-
-			// 	client.fromRoom <- msg
-
-			// 	//fmt.Println(msg)
-			// 	//fmt.Println(client.name)
-			// }
-
-			for client := range r.clientsArray {
-				//fmt.Println(clientinded)
-				r.tracer.Trace(" -- sent to client")
-
-				r.clientsArray[client].fromRoom <- msg
-
-				//fmt.Println(msg)
-				//fmt.Println(client.name)
-			}
-
-		}
-	}
-
-}
-
-// func (r *room) joinRoom(c client) {
-// 	r.clients = append(r.clients, c)
-// 	r.tracer.Trace("New client joined")
-
-// 	fmt.Println("room:: joinRoom")
-// 	fmt.Println(c.name)
-// 	//
-// }
-
-// hello
-func (r *room) sayHello() {
-	fmt.Println("say hello")
+	r.join <- client
+	defer func() { r.leave <- client }()
+	go client.write()
+	client.read()
 }
