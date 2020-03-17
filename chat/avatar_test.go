@@ -11,8 +11,8 @@ func TestAuthAvatar(t *testing.T) {
 		t.Error("AuthAvatar.GetAvatarURL should return ErrNoAvatarURL when no value present")
 	}
 
-	if url != "testing" {
-		t.Error("url is not equal to testing")
+	if url != "" {
+		t.Error("url should be empty but it's not")
 	}
 
 	//set the url

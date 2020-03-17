@@ -20,5 +20,13 @@ type AuthAvatar struct{}
 
 // GetAvatarURL returns an avatar url
 func (AuthAvatar) GetAvatarURL(c *client) (string, error) {
-	return c.userData["avatar_url"], ErrNoAvatarURL
+	url, ok := c.userData["avatar_url"]
+
+	if ok {
+		return url.(string), nil
+
+	}
+	//return url.(string), ErrNoAvatarURL
+	//return c.userData["avatar_url"], ErrNoAvatarURL
+	return "", ErrNoAvatarURL
 }
