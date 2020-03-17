@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/md5"
 	"errors"
 )
 
@@ -18,15 +19,29 @@ type Avatar interface {
 // AuthAvatar ...
 type AuthAvatar struct{}
 
+// UseAuthAvatar used in main
+var UseAuthAvatar AuthAvatar
+
 // GetAvatarURL returns an avatar url
 func (AuthAvatar) GetAvatarURL(c *client) (string, error) {
-	url, ok := c.userData["avatar_url"]
 
-	if ok {
+	if url, ok := c.userData["avatar_url"]; ok {
 		return url.(string), nil
 
 	}
 	//return url.(string), ErrNoAvatarURL
 	//return c.userData["avatar_url"], ErrNoAvatarURL
 	return "", ErrNoAvatarURL
+}
+
+// GravatarAvatar ...
+type GravatarAvatar struct{}
+
+// GetAvatarURL ...
+func (GravatarAvatar) GetAvatarURL(c *client) (string, error) {
+
+	if email, ok := c.userData["Email"]; ok {
+		m := md5.New()
+	}
+	return "test", nil
 }
