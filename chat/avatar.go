@@ -1,11 +1,7 @@
 package main
 
 import (
-	"crypto/md5"
 	"errors"
-	"fmt"
-	"io"
-	"strings"
 )
 
 // ErrNoAvatarURL is the error that is returned when the
@@ -46,12 +42,10 @@ var UseGravatar GravatarAvatar
 // GetAvatarURL ...
 func (GravatarAvatar) GetAvatarURL(c *client) (string, error) {
 
-	if email, ok := c.userData["email"]; ok {
-		if emailStr, ok := email.(string); ok {
-			m := md5.New()
-			io.WriteString(m, strings.ToLower(emailStr))
+	if userid, ok := c.userData["userid"]; ok {
+		if useridStr, ok := userid.(string); ok {
 
-			return fmt.Sprintf("//www.gravatar.com/avatar/%x", md5.Sum([]byte(emailStr))), nil
+			return "//www.gravatar.com/avatar/" + useridStr, nil
 		}
 	}
 	return "", ErrNoAvatarURL

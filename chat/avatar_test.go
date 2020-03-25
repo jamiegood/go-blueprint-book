@@ -35,7 +35,7 @@ func TestAuthAvatar(t *testing.T) {
 func TestGravatarAvatar(t *testing.T) {
 	var gravAvatar = new(GravatarAvatar)
 	var c = new(client)
-	c.userData = map[string]interface{}{"email": "weeatbricks@gmail.com"}
+	c.userData = map[string]interface{}{"userid": "b1522df375addd5bbcadf1edac1a3671"}
 
 	url, err := gravAvatar.GetAvatarURL(c)
 
