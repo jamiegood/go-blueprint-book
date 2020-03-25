@@ -1,6 +1,8 @@
 package main
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestAuthAvatar(t *testing.T) {
 	var authAvatar = new(AuthAvatar)
@@ -33,14 +35,15 @@ func TestAuthAvatar(t *testing.T) {
 func TestGravatarAvatar(t *testing.T) {
 	var gravAvatar = new(GravatarAvatar)
 	var c = new(client)
-	c.userData = map[string]interface{}{"emaail": "weeatbricks@gmail.com"}
+	c.userData = map[string]interface{}{"email": "weeatbricks@gmail.com"}
 
 	url, err := gravAvatar.GetAvatarURL(c)
-	if err != ErrNoAvatarURL {
-		t.Error("gravAvatar.GetAvatarURL should not return an error")
+
+	if err != nil {
+		t.Error("gravAvatar.GetAvatarURL should not return an error", err)
 	}
 
-	if url != "https://en.gravatar.com/userimage/1664349/3db651b241f99101c82206bd344327a0.png" {
-		t.Errorf("Url is wrongly returns %s", url)
+	if url != "//www.gravatar.com/avatar/b1522df375addd5bbcadf1edac1a3671" {
+		t.Errorf("GravatarAvatar.GetAvatarURL wrongly returned %s", url)
 	}
 }
