@@ -50,3 +50,14 @@ func (GravatarAvatar) GetAvatarURL(c *client) (string, error) {
 	}
 	return "", ErrNoAvatarURL
 }
+
+// FileSystemAvatar ...
+type FileSystemAvatar struct{}
+
+// UseFileSystem ...
+var UseFileSystem FileSystemAvatar
+
+// GetAvatarURL ...
+func (FileSystemAvatar) GetAvatarURL(c *client) (string, error) {
+	return "", nil
+}

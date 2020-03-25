@@ -47,3 +47,14 @@ func TestGravatarAvatar(t *testing.T) {
 		t.Errorf("GravatarAvatar.GetAvatarURL wrongly returned %s", url)
 	}
 }
+
+func TestFileSystemAvatar(t *testing.T) {
+
+	//create instance of FileSysmteAvatar
+	filesystemAvatar := new(FileSystemAvatar)
+	var c = new(client)
+	c.userData = map[string]interface{}{"userid": "b1522df375addd5bbcadf1edac1a3671"}
+
+	url, err := filesystemAvatar.GetAvatarURL(c)
+
+}

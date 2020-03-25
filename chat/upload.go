@@ -1,17 +1,33 @@
 package main
 
 import (
-	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
+	"path"
 )
 
 // uploaderHandler ...
-func uploaderHandler(w http.ResponseWriter, r *http.Request) {
+func uploaderHandler(w http.ResponseWriter, req *http.Request) {
 
-	userid := r.FormValue("userid")
+	userid := req.FormValue("userid")
 
-	fmt.Println(userid)
-	io.WriteString(w, "hello")
+	file, header, err := req.FormFile("avatarFile")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	data, err := ioutil.ReadAll(file)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	filename := path.Join("avatars", userid+path.Ext(header.Filename))
+	err = ioutil.WriteFile(filename, data, 0777)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	io.WriteString(w, "Successful")
 
 }
