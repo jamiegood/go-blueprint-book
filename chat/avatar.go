@@ -59,5 +59,11 @@ var UseFileSystem FileSystemAvatar
 
 // GetAvatarURL ...
 func (FileSystemAvatar) GetAvatarURL(c *client) (string, error) {
-	return "", nil
+	if userid, ok := c.userData["userid"]; ok {
+		if useridStr, ok := userid.(string); ok {
+
+			return "/avatars/" + useridStr + ".jpg", nil
+		}
+	}
+	return "", ErrNoAvatarURL
 }
