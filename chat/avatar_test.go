@@ -3,71 +3,58 @@ package main
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
+	"path"
 	"testing"
+
+	gomniauthtest "github.com/stretchr/gomniauth/test"
 )
 
 func TestAuthAvatar(t *testing.T) {
-	var authAvatar = new(AuthAvatar)
-	var c = new(client)
-
-	url, err := authAvatar.GetAvatarURL(c)
+	var authAvatar AuthAvatar
+	testUser := &gomniauthtest.TestUser{}
+	testUser.On("AvatarURL").Return("", ErrNoAvatarURL)
+	testChatUser := &chatUser{User: testUser}
+	url, err := authAvatar.GetAvatarURL(testChatUser)
 	if err != ErrNoAvatarURL {
 		t.Error("AuthAvatar.GetAvatarURL should return ErrNoAvatarURL when no value present")
 	}
-
-	if url != "" {
-		t.Error("url should be empty but it's not")
+	testURL := "http://url-to-gravatar/"
+	testUser = &gomniauthtest.TestUser{}
+	testChatUser.User = testUser
+	testUser.On("AvatarURL").Return(testURL, nil)
+	url, err = authAvatar.GetAvatarURL(testChatUser)
+	if err != nil {
+		t.Error("AuthAvatar.GetAvatarURL should return no error when value present")
 	}
-
-	//set the url
-	testURL := "http://testing"
-	c.userData = map[string]interface{}{"avatar_url": testURL}
-	url, err = authAvatar.GetAvatarURL(c)
-
-	if url != testURL {
-		t.Error("testurl is not correct")
-
+	if url != testUrl {
+		t.Error("AuthAvatar.GetAvatarURL should return correct URL")
 	}
-
-	//return url, err
-
 }
 
 //TestGravatarAvatar ...
 func TestGravatarAvatar(t *testing.T) {
-	var gravAvatar = new(GravatarAvatar)
-	var c = new(client)
-	c.userData = map[string]interface{}{"userid": "b1522df375addd5bbcadf1edac1a3671"}
-
-	url, err := gravAvatar.GetAvatarURL(c)
-
+	var gravatarAvatar GravatarAvatar
+	user := &chatUser{uniqueID: "abc"}
+	url, err := gravatarAvatar.GetAvatarURL(user)
 	if err != nil {
-		t.Error("gravAvatar.GetAvatarURL should not return an error", err)
+		t.Error("GravatarAvatar.GetAvatarURL should not return an error")
 	}
-
-	if url != "//www.gravatar.com/avatar/b1522df375addd5bbcadf1edac1a3671" {
+	if url != "//www.gravatar.com/avatar/abc" {
 		t.Errorf("GravatarAvatar.GetAvatarURL wrongly returned %s", url)
 	}
 }
-
 func TestFileSystemAvatar(t *testing.T) {
-
-	filename := filepath.Join("avatars", "abc.jpg")
+	// make a test avatar file
+	filename := path.Join("avatars", "abc.jpg")
 	ioutil.WriteFile(filename, []byte{}, 0777)
-	defer os.Remove(filename)
-	//create instance of FileSysmteAvatar
-	filesystemAvatar := new(FileSystemAvatar)
-	var c = new(client)
-	c.userData = map[string]interface{}{"userid": "b1522df375addd5bbcadf1edac1a3671"}
-
-	url, err := filesystemAvatar.GetAvatarURL(c)
+	defer func() { os.Remove(filename) }()
+	var fileSystemAvatar FileSystemAvatar
+	user := &chatUser{uniqueID: "abc"}
+	url, err := fileSystemAvatar.GetAvatarURL(user)
 	if err != nil {
-		t.Errorf("filesystemAvatar.GetAvatarURL should not return error")
+		t.Error("FileSystemAvatar.GetAvatarURL should not return an error")
 	}
-
 	if url != "/avatars/abc.jpg" {
-		t.Errorf("filesystemAvatar.GetAvatarURL returned the wrong url")
+		t.Errorf("FileSystemAvatar.GetAvatarURL wrongly returned %s", url)
 	}
-
 }

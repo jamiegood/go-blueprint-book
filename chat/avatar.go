@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"io/ioutil"
+	"path"
 )
 
 // ErrNoAvatarURL is the error that is returned when the
@@ -58,11 +60,15 @@ type FileSystemAvatar struct{}
 var UseFileSystem FileSystemAvatar
 
 // GetAvatarURL ...
-func (FileSystemAvatar) GetAvatarURL(c *client) (string, error) {
-	if userid, ok := c.userData["userid"]; ok {
-		if useridStr, ok := userid.(string); ok {
-
-			return "/avatars/" + useridStr + ".jpg", nil
+func (FileSystemAvatar) GetAvatarURL(u ChatUser) (string, error) {
+	if files, err := ioutil.ReadDir("avatars"); err == nil {
+		for _, file := range files {
+			if file.IsDir() {
+				continue
+			}
+			if match, _ := path.Match(u.UniqueID()+"*", file.Name()); match {
+				return "/avatars/" + file.Name(), nil
+			}
 		}
 	}
 	return "", ErrNoAvatarURL
