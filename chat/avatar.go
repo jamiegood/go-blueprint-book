@@ -12,9 +12,20 @@ var ErrNoAvatarURL = errors.New("chat: Unable to get an avatar url")
 
 // Avatar represents types capable of representing user profile images
 type Avatar interface {
-	// takes in a client as we want to know the user to get, i.e. the gravatar url
-	// returns a url
-	GetAvatarURL(c *client) (string, error)
+	GetAvatarURL(ChatUser) (string, error)
+}
+
+// TryAvatars ...
+type TryAvatars []Avatar
+
+// GetAvatarURL ...
+func (a TryAvatars) GetAvatarURL(u ChatUser) (string, error) {
+	for _, avatar := range a {
+		if url, err := avatar.GetAvatarURL(u); err == nil {
+			return url, nil
+		}
+	}
+	return "", ErrNoAvatarURL
 }
 
 // AuthAvatar ...
@@ -24,15 +35,12 @@ type AuthAvatar struct{}
 var UseAuthAvatar AuthAvatar
 
 // GetAvatarURL returns an avatar url
-func (AuthAvatar) GetAvatarURL(c *client) (string, error) {
-
-	if url, ok := c.userData["avatar_url"]; ok {
-		return url.(string), nil
-
+func (AuthAvatar) GetAvatarURL(u ChatUser) (string, error) {
+	url := u.AvatarURL()
+	if len(url) == 0 {
+		return "", ErrNoAvatarURL
 	}
-	//return url.(string), ErrNoAvatarURL
-	//return c.userData["avatar_url"], ErrNoAvatarURL
-	return "", ErrNoAvatarURL
+	return url, nil
 }
 
 // GravatarAvatar ...
@@ -42,22 +50,15 @@ type GravatarAvatar struct{}
 var UseGravatar GravatarAvatar
 
 // GetAvatarURL ...
-func (GravatarAvatar) GetAvatarURL(c *client) (string, error) {
-
-	if userid, ok := c.userData["userid"]; ok {
-		if useridStr, ok := userid.(string); ok {
-
-			return "//www.gravatar.com/avatar/" + useridStr, nil
-		}
-	}
-	return "", ErrNoAvatarURL
+func (GravatarAvatar) GetAvatarURL(u ChatUser) (string, error) {
+	return "//www.gravatar.com/avatar/" + u.UniqueID(), nil
 }
 
 // FileSystemAvatar ...
 type FileSystemAvatar struct{}
 
-// UseFileSystem ...
-var UseFileSystem FileSystemAvatar
+// UseFileSystemAvatar ...
+var UseFileSystemAvatar FileSystemAvatar
 
 // GetAvatarURL ...
 func (FileSystemAvatar) GetAvatarURL(u ChatUser) (string, error) {
