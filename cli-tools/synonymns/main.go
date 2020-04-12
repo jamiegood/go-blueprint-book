@@ -11,6 +11,13 @@ import (
 func main() {
 	apiKey := os.Getenv("BHT_APIKEY")
 	thesaurus := &thesaurus.BigHuge{APIKey: apiKey}
+	syns, err := thesaurus.Synonyms("big")
+	if err != nil {
+		log.Fatalln("Failed", err)
+	}
+	for _, syn := range syns {
+		fmt.Println(syn)
+	}
 	s := bufio.NewScanner(os.Stdin)
 	for s.Scan() {
 		word := s.Text()
